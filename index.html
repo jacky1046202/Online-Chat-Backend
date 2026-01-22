@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Go 聊天室</title>
+    <style>
+        /* 簡單的 CSS 讓它好看一點點 */
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        #message-area {
+            border: 1px solid #ccc;
+            height: 300px;
+            overflow-y: scroll;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .msg {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1> 即時聊天室</h1>
+
+    <div id="message-area"></div>
+
+    <input type="text" id="input-msg" placeholder="輸入訊息..." />
+    <button onclick="sendMessage()">發送</button>
+
+    <script>
+        // 1. 判斷現在是本機開發還是正式環境
+        // 如果網址是 http，就用 ws；如果網址是 https，就用 wss (安全連線)
+        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const host = window.location.host; // 例如 localhost:8080 或 my-app.onrender.com
+
+        // 記得嗎？你的 Go 路由設定是 /nigg (或是改回 /ws 了？請這裡要對應你的 Go 程式碼)
+        // 建議改成 /ws 比較專業，下面我先用 /ws 舉例
+        const wsUrl = protocol + host + "/nigg";
+
+        // 2. 建立 WebSocket 連線
+        const socket = new WebSocket(wsUrl);
+
+        // 3. 連線成功時觸發
+        socket.onopen = function () {
+            appendMessage("系統: 連線成功！");
+        };
+
+        // 4. 收到後端 (Hub) 傳來的訊息時觸發
+        socket.onmessage = function (event) {
+            appendMessage("網友: " + event.data);
+        };
+
+        // 5. 連線斷開時觸發
+        socket.onclose = function () {
+            appendMessage("系統: 連線已斷開");
+        };
+
+        // 發送訊息的函式
+        function sendMessage() {
+            const input = document.getElementById("input-msg");
+            if (input.value) {
+                // 透過 WebSocket 把文字送給後端 (ReadPump 會收到)
+                socket.send(input.value);
+                input.value = ""; // 清空輸入框
+            }
+        }
+
+        // 輔助函式：把文字加到畫面上
+        function appendMessage(msg) {
+            const area = document.getElementById("message-area");
+            const div = document.createElement("div");
+            div.className = "msg";
+            div.innerText = msg;
+            area.appendChild(div);
+            // 自動捲動到底部
+            area.scrollTop = area.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>

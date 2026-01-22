@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -124,5 +125,11 @@ func main() {
 		client.ReadPump()
 	})
 
-	r.Run(":6969")
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "6969"
+	}
+
+	r.Run(":" + port)
 }
